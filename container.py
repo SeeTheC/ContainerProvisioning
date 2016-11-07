@@ -3,6 +3,7 @@ import time
 from cpbo import Config
 from cpbo import ServerBO
 from cpbo import ContainerBO
+from cpthread import ContainerInfoThread
 '''
 -------------------------------------------
     Class: Manage All servers
@@ -65,19 +66,21 @@ class Server:
                 cbo.container=c;
                 cbo_list.append(cbo);
             containers[c_count]=cbo_list;            
-        #print
+        containers=ContainerInfoThread.getCurrentRunStatus(containers);
         '''
-	for clist in containers:
+        #print
+        for clist in containers:            
             print("----------")        
             for c in clist:
                 print(str(c.isRunning())+"\t cpu:"+str(c.getCpuLimit())+"\t mem:"+str(c.getMemoryLimit()));
-                print(c.getRunningStatus());
+                print("cpu_util: "+str(c.cpu_util)+"\tmem_util : "+str(c.mem_util)+"\n\n");
         '''
         return containers;
 
 if (__name__ == "__main__"):
     Config.init();
     ser=Server();
+    print("Monitoring Tool started ...")
     c1=ContainerBO();
     c1.cpu=2;
     c1.memory=256;
