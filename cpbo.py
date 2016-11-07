@@ -70,3 +70,50 @@ class ContainerBO:
     def __init__(self):
         self.cpu=None;
         self.memory=None;
+        self.container=None;
+        self.isRunning=(lambda: True if self.container.status=="Running" else False);
+
+    '''
+    -------------------------------------------
+        Desc: gets the Cpu Limit
+    ----------------------------------------------
+    '''    
+    def getCpuLimit(self):
+        if self.container == None:
+            return None;
+        cpu=self.container.config.get("limits.cpu");        
+        return cpu if cpu!=None and len(cpu)>0 else None;
+
+    '''
+    -------------------------------------------
+        Desc: gets the mem Limit
+    ----------------------------------------------
+    '''   
+    def getMemoryLimit(self):
+        if self.container == None:
+            return None;
+        mem=self.container.config.get("limits.memory");
+        return mem[:-2] if mem!=None and len(mem)>0 else None;
+    '''
+    -------------------------------------------
+        Desc: get running status
+    ----------------------------------------------
+    '''   
+    def getRunningStatus(self):
+        if self.container == None or not self.isRunning():
+            return None;
+        status=self.container.execute(["vmstat","1","-n","5"])[0];
+        lines=status.split("\n");
+        frequency=0;
+        cpu_usage=0;
+        mem_usage=0;
+        for lno in range(0,len(lines)):            
+            if lno >1 and len(lines[lno])>0:                
+                col=lines[lno].split();
+                cpu_usage+=100-int(col[14]);
+                mem_usage+=int(col[3]);
+                #print(col[3]+" - "+col[14]);
+                frequency+=1;
+        avg_mem_usage=int(mem_usage/(frequency if frequency !=0 else 1));
+        avg_cpu_usage=int(cpu_usage/(frequency if frequency !=0 else 1));
+        return {"cpu":avg_cpu_usage,"mem":avg_mem_usage};
