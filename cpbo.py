@@ -1,3 +1,5 @@
+#!/usr/bin/python3.5
+
 from pylxd import  Client
 import json
 '''
@@ -8,21 +10,21 @@ import json
 class Config:
     server_config=None;
     cp_config=None;
-    
+
     @staticmethod
     def init():
         Config.loadCpJson();
-        Config.loadServerJson();        
-        
-    @staticmethod     
+        Config.loadServerJson();
+
+    @staticmethod
     def loadCpJson():
         cp_file=open("cp.config","r")
-        Config.cp_config=json.load(cp_file);        
+        Config.cp_config=json.load(cp_file);
 
-    @staticmethod     
+    @staticmethod
     def loadServerJson():
         s_file=open("server.config","r");
-        Config.server_config=json.load(s_file);        
+        Config.server_config=json.load(s_file);
 
 
 '''
@@ -33,7 +35,7 @@ class Config:
 
 class ServerBO:
     '''
-    -------------------------------------------
+    ---------------------------------------------
         Desc: Constructor
     ----------------------------------------------
     '''
@@ -43,11 +45,11 @@ class ServerBO:
         self.client=self.creatClient();
 
     '''
-    -------------------------------------------
+    ----------------------------------------------
         Desc: Creates the lxd client obj
         return : Obj is successfull else None
     ----------------------------------------------
-    '''        
+    '''
     def creatClient(self):
         client= Client(endpoint=self.uri, cert=(Config.cp_config["cert"],Config.cp_config["key"]),verify=False);
         client.authenticate(Config.cp_config["trustPassword"]);
@@ -57,13 +59,13 @@ class ServerBO:
             return None;
 
 '''
--------------------------------------------
+----------------------------------------------
     Class: Class obj will info about the server
 ----------------------------------------------
 '''
 class ContainerBO:
     '''
-    -------------------------------------------
+    ----------------------------------------------
         Desc: Constructor
     ----------------------------------------------
     '''
@@ -74,31 +76,31 @@ class ContainerBO:
         self.isRunning=(lambda: True if self.container.status=="Running" else False);
 
     '''
-    -------------------------------------------
+    ----------------------------------------------
         Desc: gets the Cpu Limit
     ----------------------------------------------
-    '''    
+    '''
     def getCpuLimit(self):
         if self.container == None:
             return None;
-        cpu=self.container.config.get("limits.cpu");        
+        cpu=self.container.config.get("limits.cpu");
         return cpu if cpu!=None and len(cpu)>0 else None;
 
     '''
-    -------------------------------------------
+    ----------------------------------------------
         Desc: gets the mem Limit
     ----------------------------------------------
-    '''   
+    '''
     def getMemoryLimit(self):
         if self.container == None:
             return None;
         mem=self.container.config.get("limits.memory");
         return mem[:-2] if mem!=None and len(mem)>0 else None;
     '''
-    -------------------------------------------
+    ----------------------------------------------
         Desc: get running status
     ----------------------------------------------
-    '''   
+    '''
     def getRunningStatus(self):
         if self.container == None or not self.isRunning():
             return None;
@@ -107,8 +109,8 @@ class ContainerBO:
         frequency=0;
         cpu_usage=0;
         mem_usage=0;
-        for lno in range(0,len(lines)):            
-            if lno >1 and len(lines[lno])>0:                
+        for lno in range(0,len(lines)):
+            if lno >1 and len(lines[lno])>0:
                 col=lines[lno].split();
                 cpu_usage+=100-int(col[14]);
                 mem_usage+=int(col[3]);
