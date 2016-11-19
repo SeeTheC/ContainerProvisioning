@@ -70,7 +70,7 @@ class ContainerBO:
     ----------------------------------------------
     '''
     def __init__(self):
-        self.sname=None;
+        self.sname=None;                
         self.name=None;
         self.cpu=None;
         self.memory=None;
@@ -111,6 +111,7 @@ class ContainerBO:
         frequency=0;
         cpu_usage=0;
         mem_usage=0;
+        memLimit=self.getMemoryLimit();
         for lno in range(0,len(lines)):
             if lno >1 and len(lines[lno])>0:
                 col=lines[lno].split();
@@ -120,4 +121,4 @@ class ContainerBO:
                 frequency+=1;
         avg_mem_usage=int(mem_usage/(frequency if frequency !=0 else 1));
         avg_cpu_usage=int(cpu_usage/(frequency if frequency !=0 else 1));
-        return {"cpu":avg_cpu_usage,"mem":avg_mem_usage};
+        return {"cpu":avg_cpu_usage,"mem":memLimit-avg_mem_usage};
