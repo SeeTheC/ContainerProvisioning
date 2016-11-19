@@ -77,6 +77,7 @@ class Server:
         for s in self.servers:
             containers.append(s.client.containers.all());
         #process list of containers
+        si=0;            
         for c_count in range(0,len(containers)):
             clist=containers[c_count];
             cbo_list=list();
@@ -84,8 +85,10 @@ class Server:
                 cbo=ContainerBO();
                 cbo.container=c;
                 cbo.name=c.name;
+                cbo.sname=self.servers[si].host;                
                 cbo_list.append(cbo);
             containers[c_count]=cbo_list;
+            si+=1;
         containers=ContainerInfoThread.getCurrentRunStatus(containers);
         self.printContainersDetail(containers);        
         return containers;
@@ -97,7 +100,7 @@ class Server:
             if(len(clist)>0):
                 print("_______________________[Server:"+str(si)+"]__________________________________");
             for c in clist:
-                print("name:"+c.name+"\tRunning:"+str(c.isRunning())+"\t cpu:"+str(c.getCpuLimit())+"\t mem:"+str(c.getMemoryLimit())+"\tcpu_util: "+str(c.cpu_util)+"\tmem_util : "+str(c.mem_util)+"\n\n");
+                print("sname:"+c.sname+"\tcname:"+c.name+"\tRunning:"+str(c.isRunning())+"\t cpu:"+str(c.getCpuLimit())+"\t mem:"+str(c.getMemoryLimit())+"\tcpu_util: "+str(c.cpu_util)+"\tmem_util : "+str(c.mem_util)+"\n\n");
             si+=1;
         print("--------------------------------------------------------------------");                
         
