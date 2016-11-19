@@ -97,7 +97,7 @@ class ContainerBO:
         if self.container == None:
             return None;
         mem=self.container.config.get("limits.memory");
-        return mem[:-2] if mem!=None and len(mem)>0 else None;
+        return int(mem[:-2])*1024 if mem!=None and len(mem)>0 else None;
     '''
     ----------------------------------------------
         Desc: get running status
