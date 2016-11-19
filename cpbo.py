@@ -70,6 +70,7 @@ class ContainerBO:
     ----------------------------------------------
     '''
     def __init__(self):
+        self.sname=None;                
         self.name=None;
         self.cpu=None;
         self.memory=None;

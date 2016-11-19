@@ -58,6 +58,7 @@ class Server:
             hw["limits.memory"]=str(container_bo.memory)+"MB";
         config = {'name': container_bo.name,  "config": hw, 'source': {'type': 'image','fingerprint':str(Config.cp_config["defaultFingerprint"])}}
         container = self.servers[server_index].client.containers.create(config, wait=True);
+        container.start(wait=False)
         try:
             Server.SLA[self.servers[server_index].host][container_bo.name] = [container_bo.cpu, container_bo.memory]
         except KeyError as e:
@@ -86,17 +87,22 @@ class Server:
                 cbo_list.append(cbo);
             containers[c_count]=cbo_list;
         containers=ContainerInfoThread.getCurrentRunStatus(containers);
-
-        '''for clist in containers:
-            print("----------")
-            for c in clist:
-                print(str(c.isRunning())+"\t cpu:"+str(c.getCpuLimit())+"\t mem:"+str(c.getMemoryLimit()));
-                print("cpu_util: "+str(c.cpu_util)+"\tmem_util : "+str(c.mem_util)+"\n\n");'''
-
+        self.printContainersDetail(containers);        
         return containers;
 
-        def getOverloadedContainers(self):
-            pass
+    def printContainersDetail(self,containers):
+        print("------------------[Printing]----------------------------");
+        si=0;
+        for clist in containers:
+            if(len(clist)>0):
+                print("_______________________[Server:"+str(si)+"]__________________________________");
+            for c in clist:
+                print("name:"+c.name+"\tRunning:"+str(c.isRunning())+"\t cpu:"+str(c.getCpuLimit())+"\t mem:"+str(c.getMemoryLimit())+"\tcpu_util: "+str(c.cpu_util)+"\tmem_util : "+str(c.mem_util)+"\n\n");
+            si+=1;
+        print("--------------------------------------------------------------------");                
+        
+    def getOverloadedContainers(self):
+        pass
 
 
 if (__name__ == "__main__"):
@@ -106,8 +112,8 @@ if (__name__ == "__main__"):
         print("Monitoring Tool started ...")
         c1=ContainerBO();
         c1.cpu=2;
-        c1.memory=256;
-        ser.createContainer(0,c1);
+        c1.memory=1024;
+        #ser.createContainer(0,c1);
         ser.getAllContainersStatus();
     except KeyboardInterrupt as e:
         print("\nReceived Keyboard Interrupt")
@@ -116,3 +122,4 @@ if (__name__ == "__main__"):
             print("Dumping contents of SLA into file")
             with open('sla.json', 'w') as f:
                 dump(Server.SLA, f)
+    
