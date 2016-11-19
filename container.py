@@ -6,18 +6,24 @@ from cpbo import Config
 from cpbo import ServerBO
 from cpbo import ContainerBO
 from cpthread import ContainerInfoThread
+from json import load, dump
 '''
 ----------------------------------------------
     Class: Manage All servers
 ----------------------------------------------
 '''
+
 class Server:
     overloadThreshold=0.8
-
+    SLA = None
     def __init__(self):
         self.servers=self.loadAllServer();
         # get containers SLA from json file
-        self.SLA=None
+        try:
+            with open('sla.json') as f:
+                Server.SLA = load(f)
+        except Exception as e:
+            Server.SLA = dict()
         self.containers=self.getAllContainersStatus()
 
     '''
@@ -43,15 +49,21 @@ class Server:
     -----------------------------------------------
     '''
     def createContainer(self,server_index,container_bo):
-        cid=int(time()*1000);
+        container_bo.name='cp' + str(int(time()*1000));
         hw={};
         if(container_bo.cpu!=None and container_bo.cpu!=0):
             hw["limits.cpu"]=str(container_bo.cpu);
 
         if(container_bo.memory!=None and container_bo.memory!=0):
             hw["limits.memory"]=str(container_bo.memory)+"MB";
-        config = {'name': "cp"+str(cid),  "config": hw, 'source': {'type': 'image','fingerprint':str(Config.cp_config["defaultFingerprint"])}}
+        config = {'name': container_bo.name,  "config": hw, 'source': {'type': 'image','fingerprint':str(Config.cp_config["defaultFingerprint"])}}
         container = self.servers[server_index].client.containers.create(config, wait=True);
+        try:
+            Server.SLA[self.servers[server_index].host][container_bo.name] = [container_bo.cpu, container_bo.memory]
+        except KeyError as e:
+            Server.SLA[self.servers[server_index].host] = dict()
+            Server.SLA[self.servers[server_index].host][container_bo.name] = [container_bo.cpu, container_bo.memory]
+
         return container;
 
     '''
@@ -75,11 +87,11 @@ class Server:
             containers[c_count]=cbo_list;
         containers=ContainerInfoThread.getCurrentRunStatus(containers);
 
-        for clist in containers:
+        '''for clist in containers:
             print("----------")
             for c in clist:
                 print(str(c.isRunning())+"\t cpu:"+str(c.getCpuLimit())+"\t mem:"+str(c.getMemoryLimit()));
-                print("cpu_util: "+str(c.cpu_util)+"\tmem_util : "+str(c.mem_util)+"\n\n");
+                print("cpu_util: "+str(c.cpu_util)+"\tmem_util : "+str(c.mem_util)+"\n\n");'''
 
         return containers;
 
@@ -88,12 +100,19 @@ class Server:
 
 
 if (__name__ == "__main__"):
-    Config.init();
-    ser=Server();
-    print("Monitoring Tool started ...")
-    c1=ContainerBO();
-    c1.cpu=2;
-    c1.memory=256;
-    ser.createContainer(0,c1);
-    ser.getAllContainersStatus();
-    print("success");
+    try:
+        Config.init();
+        ser=Server();
+        print("Monitoring Tool started ...")
+        c1=ContainerBO();
+        c1.cpu=2;
+        c1.memory=256;
+        ser.createContainer(0,c1);
+        ser.getAllContainersStatus();
+    except KeyboardInterrupt as e:
+        print("\nReceived Keyboard Interrupt")
+    finally:
+        if Server.SLA != None:
+            print("Dumping contents of SLA into file")
+            with open('sla.json', 'w') as f:
+                dump(Server.SLA, f)
