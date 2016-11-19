@@ -16,7 +16,7 @@ class Monitor():
         print("Monitor Started...");
     def getUnderLoadServer(self):
         cp=self.cp;
-        sla=Server.SLA;        
+        sla=Server.SLA;
     def findMachine(self, cpu, memory):
         containers = self.server.getAllContainers()
 
@@ -31,7 +31,7 @@ def main():
             print("Dumping contents of SLA into file")
             with open('sla.json', 'w') as f:
                 dump(Server.SLA, f)
-    
-    
+
+
 if __name__ == '__main__':
     main()

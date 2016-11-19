@@ -7,6 +7,7 @@ from cpbo import ServerBO
 from cpbo import ContainerBO
 from cpthread import ContainerInfoThread
 from json import load, dump
+from constants import Constants
 '''
 ----------------------------------------------
     Class: Manage All servers
@@ -25,6 +26,7 @@ class Server:
         except Exception as e:
             Server.SLA = dict()
         self.containers=self.getAllContainersStatus()
+        self.loadExistingContainers()
 
     '''
     ---------------------------------------------
@@ -60,10 +62,10 @@ class Server:
         container = self.servers[server_index].client.containers.create(config, wait=True);
         container.start(wait=False)
         try:
-            Server.SLA[self.servers[server_index].host][container_bo.name] = [container_bo.cpu, container_bo.memory]
+            Server.SLA[self.servers[server_index].host][container_bo.name] = [container_bo.cpu, container_bo.memory * Constants.MBtoKB]
         except KeyError as e:
             Server.SLA[self.servers[server_index].host] = dict()
-            Server.SLA[self.servers[server_index].host][container_bo.name] = [container_bo.cpu, container_bo.memory]
+            Server.SLA[self.servers[server_index].host][container_bo.name] = [container_bo.cpu, container_bo.memory * Constants.MBtoKB]
 
         return container;
 
@@ -77,7 +79,7 @@ class Server:
         for s in self.servers:
             containers.append(s.client.containers.all());
         #process list of containers
-        si=0;            
+        si=0;
         for c_count in range(0,len(containers)):
             clist=containers[c_count];
             cbo_list=list();
@@ -85,12 +87,12 @@ class Server:
                 cbo=ContainerBO();
                 cbo.container=c;
                 cbo.name=c.name;
-                cbo.sname=self.servers[si].host;                
+                cbo.sname=self.servers[si].host;
                 cbo_list.append(cbo);
             containers[c_count]=cbo_list;
             si+=1;
         containers=ContainerInfoThread.getCurrentRunStatus(containers);
-        self.printContainersDetail(containers);        
+        self.printContainersDetail(containers);
         return containers;
 
     def printContainersDetail(self,containers):
@@ -102,10 +104,21 @@ class Server:
             for c in clist:
                 print("sname:"+c.sname+"\tcname:"+c.name+"\tRunning:"+str(c.isRunning())+"\t cpu:"+str(c.getCpuLimit())+"\t mem:"+str(c.getMemoryLimit())+"\tcpu_util: "+str(c.cpu_util)+"\tmem_util : "+str(c.mem_util)+"\n\n");
             si+=1;
-        print("--------------------------------------------------------------------");                
-        
-    def getOverloadedContainers(self):
-        pass
+        print("--------------------------------------------------------------------");
+
+    '''
+    -----------------------------------------------
+        Desc: Loads existing containers from servers
+    -----------------------------------------------
+    '''
+    def loadExistingContainers(self):
+        for sc in self.containers:
+            for cbo in sc:
+                try:
+                    Server.SLA[cbo.sname][cbo.name] = [cbo.getCpuLimit(), cbo.getMemoryLimit()]
+                except KeyError as e:
+                    Server.SLA[cbo.sname] = dict()
+                    Server.SLA[cbo.sname][cbo.name] = [cbo.getCpuLimit(), cbo.getMemoryLimit()]
 
 
 if (__name__ == "__main__"):
@@ -116,7 +129,7 @@ if (__name__ == "__main__"):
         c1=ContainerBO();
         c1.cpu=2;
         c1.memory=1024;
-        #ser.createContainer(0,c1);
+        ser.createContainer(0,c1);
         ser.getAllContainersStatus();
     except KeyboardInterrupt as e:
         print("\nReceived Keyboard Interrupt")
@@ -125,4 +138,3 @@ if (__name__ == "__main__"):
             print("Dumping contents of SLA into file")
             with open('sla.json', 'w') as f:
                 dump(Server.SLA, f)
-    

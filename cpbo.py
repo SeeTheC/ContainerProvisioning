@@ -70,7 +70,7 @@ class ContainerBO:
     ----------------------------------------------
     '''
     def __init__(self):
-        self.sname=None;                
+        self.sname=None;
         self.name=None;
         self.cpu=None;
         self.memory=None;
@@ -86,7 +86,7 @@ class ContainerBO:
         if self.container == None:
             return None;
         cpu=self.container.config.get("limits.cpu");
-        return cpu if cpu!=None and len(cpu)>0 else None;
+        return int(cpu) if cpu!=None and len(cpu)>0 else None;
 
     '''
     ----------------------------------------------
