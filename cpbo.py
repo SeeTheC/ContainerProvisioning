@@ -1,7 +1,7 @@
-#!/usr/bin/python3.5
+#!/usr/bin/python3.5 -W ignore
 
-from pylxd import  Client
-import json
+from pylxd import Client
+from json import load
 '''
 -------------------------------------------
     Class: Loads the Configuration class
@@ -19,12 +19,12 @@ class Config:
     @staticmethod
     def loadCpJson():
         cp_file=open("cp.config","r")
-        Config.cp_config=json.load(cp_file);
+        Config.cp_config=load(cp_file);
 
     @staticmethod
     def loadServerJson():
         s_file=open("server.config","r");
-        Config.server_config=json.load(s_file);
+        Config.server_config=load(s_file);
 
 
 '''
@@ -70,6 +70,7 @@ class ContainerBO:
     ----------------------------------------------
     '''
     def __init__(self):
+        self.name=None;
         self.cpu=None;
         self.memory=None;
         self.container=None;

@@ -1,7 +1,7 @@
-#!/usr/bin/python3.5
+#!/usr/bin/python3.5 -W ignore
 
-from pylxd import  Client
-import time
+from pylxd import Client
+from time import time
 from cpbo import Config
 from cpbo import ServerBO
 from cpbo import ContainerBO
@@ -12,9 +12,13 @@ from cpthread import ContainerInfoThread
 ----------------------------------------------
 '''
 class Server:
+    overloadThreshold=0.8
 
     def __init__(self):
         self.servers=self.loadAllServer();
+        # get containers SLA from json file
+        self.SLA=None
+        self.containers=self.getAllContainersStatus()
 
     '''
     ---------------------------------------------
@@ -39,7 +43,7 @@ class Server:
     -----------------------------------------------
     '''
     def createContainer(self,server_index,container_bo):
-        cid=int(time.time()*1000);
+        cid=int(time()*1000);
         hw={};
         if(container_bo.cpu!=None and container_bo.cpu!=0):
             hw["limits.cpu"]=str(container_bo.cpu);
@@ -55,7 +59,7 @@ class Server:
         Desc: Returns list of container
     -----------------------------------------------
     '''
-    def getAllContainers(self):
+    def getAllContainersStatus(self):
         containers=list();
         for s in self.servers:
             containers.append(s.client.containers.all());
@@ -66,18 +70,22 @@ class Server:
             for c in clist:
                 cbo=ContainerBO();
                 cbo.container=c;
+                cbo.name=c.name;
                 cbo_list.append(cbo);
             containers[c_count]=cbo_list;
         containers=ContainerInfoThread.getCurrentRunStatus(containers);
-        '''
-        #print
+
         for clist in containers:
             print("----------")
             for c in clist:
                 print(str(c.isRunning())+"\t cpu:"+str(c.getCpuLimit())+"\t mem:"+str(c.getMemoryLimit()));
                 print("cpu_util: "+str(c.cpu_util)+"\tmem_util : "+str(c.mem_util)+"\n\n");
-        '''
+
         return containers;
+
+        def getOverloadedContainers(self):
+            pass
+
 
 if (__name__ == "__main__"):
     Config.init();
@@ -86,6 +94,6 @@ if (__name__ == "__main__"):
     c1=ContainerBO();
     c1.cpu=2;
     c1.memory=256;
-    #ser.createContainer(0,c1);
-    ser.getAllContainers();
+    ser.createContainer(0,c1);
+    ser.getAllContainersStatus();
     print("success");

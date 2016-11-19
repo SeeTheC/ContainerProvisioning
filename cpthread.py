@@ -1,7 +1,6 @@
-#!/usr/bin/python3.5
+#!/usr/bin/python3.5 -W ignore
 
-import threading
-import time
+from threading import Thread
 from cpbo import ContainerBO
 
 '''
@@ -9,7 +8,7 @@ from cpbo import ContainerBO
         Class: Real time status fetching
 -----------------------------------------------
 '''
-class ContainerInfoThread (threading.Thread):
+class ContainerInfoThread (Thread):
 
     '''
     -----------------------------------------------
@@ -17,7 +16,7 @@ class ContainerInfoThread (threading.Thread):
     -----------------------------------------------
     '''
     def __init__(self, threadId,servers_containers,server_index,container_index):
-        threading.Thread.__init__(self)
+        Thread.__init__(self)
         self.threadId = threadId
         self.containers=servers_containers;
         self.s_index=server_index;
