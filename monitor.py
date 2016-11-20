@@ -5,6 +5,7 @@ from cpbo import Config
 from cpbo import ServerBO
 from cpbo import ContainerBO
 from pylxd import Client
+from time import sleep
 from json import load, dump
 from constants import Constants
 class Monitor():
@@ -16,7 +17,10 @@ class Monitor():
         print("Monitor Started...");
 
     def run(self):
-        self.periodicMonitor();    
+        while(True):
+            print("-----------------------------------------------------------------------\n");
+            self.periodicMonitor();
+            sleep(Constants.MonitorDuration);   
 
     def periodicMonitor(self):
         cp=self.cp;
@@ -79,7 +83,7 @@ class Monitor():
         print("#OneOnMany: Per server overloaded list",len(scOverList));    
         isResized=False;
         for ocbo in scOverList:
-            print("[OneOnMany: Overload Cname:%s]"%(ocbo.name));
+            #print("[OneOnMany: Overload Cname:%s]"%(ocbo.name));
             isResized=False;
             for ucbo in scUnderList:
                 if(ucbo.expectedMemSize>1 and ocbo.expectedMemSize>1):
