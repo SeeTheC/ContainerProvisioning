@@ -70,11 +70,12 @@ class ContainerBO:
     ----------------------------------------------
     '''
     def __init__(self):
-        self.sname=None;                
+        self.sname=None;
         self.name=None;
         self.cpu=None;
         self.memory=None;
         self.container=None;
+        self.expectedMemSize=None;
         self.isRunning=(lambda: True if self.container.status=="Running" else False);
 
     '''

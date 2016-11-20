@@ -26,7 +26,7 @@ class Server:
         except Exception as e:
             Server.SLA = dict()
         self.containers=self.getAllContainersStatus()
-        self.loadExistingContainers()
+        #self.loadExistingContainers()
 
     '''
     ---------------------------------------------
@@ -92,7 +92,7 @@ class Server:
             containers[c_count]=cbo_list;
             si+=1;
         containers=ContainerInfoThread.getCurrentRunStatus(containers);
-        self.printContainersDetail(containers);
+        #self.printContainersDetail(containers);
         return containers;
 
     def printContainersDetail(self,containers):
