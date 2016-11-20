@@ -2,6 +2,7 @@
 
 from pylxd import Client
 from json import load
+from constants import Constants
 '''
 -------------------------------------------
     Class: Loads the Configuration class
@@ -98,7 +99,22 @@ class ContainerBO:
         if self.container == None:
             return None;
         mem=self.container.config.get("limits.memory");
-        return int(mem[:-2])*1024 if mem!=None and len(mem)>0 else None;
+        return int(mem[:-2])*Constants.MBtoKB if mem!=None and len(mem)>0 else None;
+
+    '''
+    ----------------------------------------------
+        Desc: sets the mem Limit
+    ----------------------------------------------
+    '''
+    def setMemoryLimit(self,sizeInKB):
+        if self.container == None:
+            return False;
+        sizeInMB=sizeInKB//Constants.MBtoKB;
+        sizeInMB=int(sizeInMB);
+        self.container.config.update({"limits.memory":str(sizeInMB)+"MB"});
+        self.container.save(wait=True);
+        return True;
+
     '''
     ----------------------------------------------
         Desc: get running status
