@@ -112,7 +112,7 @@ class ContainerBO:
         sizeInMB=sizeInKB//Constants.MBtoKB;
         sizeInMB=int(sizeInMB);
         self.container.config.update({"limits.memory":str(sizeInMB)+"MB"});
-        self.container.save(wait=True);
+        self.container.save();
         return True;
 
     '''

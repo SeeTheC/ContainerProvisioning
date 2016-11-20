@@ -34,26 +34,32 @@ class Monitor():
     def tryServerContainerResizing(self,scOverCList,scUnderList):                
         #containers to migrate because it can't be resized            
         ocRemaining=self.trySCROneOnOne(scOverCList,scUnderList);        
+        ocRemaining=self.trySCROneToMany(ocRemaining,scUnderList);        
         return ocRemaining;
-
+    '''
+    -----------------------------------------------------------
+           Desc: Try Server Container Resize One-On-One
+    ---------------------------------------------------------
+    '''
     def trySCROneOnOne(self,scOverList,scUnderList):
-        ocRemaining=list();
-        print("#Per server overloaded list",len(scOverList));
+        ocRemaining=list(); 
+        print("#OneOnOne: Per server overloaded list",len(scOverList));
         for ocbo in scOverList:
-            print("overload cname:",ocbo.name);
+            #print("[OneOnOne: Overload Cname %s by amount %s ]"%(ocbo.name,ocbo.expectedMemSize));
             ucbo=self.findSingleContainerToResize(ocbo.expectedMemSize,scUnderList);
             if(ucbo==None):
-                print("OneOnOne: No appropiate container found for (%s,%s) which needs memory %sKB"%(ocbo.sname,ocbo.name,ocbo.expectedMemSize//Constants.MBtoKB))
+                print("[OneOnOne: No appropiate container found for (%s,%s) which needs memory %sMB]"%(ocbo.sname,ocbo.name,ocbo.expectedMemSize//Constants.MBtoKB))
                 #no container to resize. Going for migration.
                 ocRemaining.append(ocbo);
             else:
                 #resize;
-                print("OneOnOne: Resizing (%s,%s) which needs memory %sKB using container (%s,%s)"%(ocbo.sname,ocbo.name,ocbo.expectedMemSize//Constants.MBtoKB,ucbo.sname,ucbo.name))                                    
-                delta=ucbo.expectedMemSize-ocbo.expectedMemSize;
-                uNewMem=ucbo.getMemoryLimit()-delta;
+                print("OneOnOne: Resizing (%s,%s) which needs memory %sMB using container (%s,%s)"%(ocbo.sname,ocbo.name,ocbo.expectedMemSize//Constants.MBtoKB,ucbo.sname,ucbo.name))                                    
+                uNewMem=ucbo.getMemoryLimit()-ocbo.expectedMemSize;
                 oNewMem=ocbo.getMemoryLimit()+ocbo.expectedMemSize;
                 ucbo.setMemoryLimit(uNewMem);
                 ocbo.setMemoryLimit(oNewMem);                                
+                ucbo.expectedMemSize=ucbo.expectedMemSize-ocbo.expectedMemSize;
+                ocbo.expectedMemSize=0;                                                   
         return ocRemaining;
 
     
@@ -62,6 +68,50 @@ class Monitor():
             if(expectedMemSize<ucbo.expectedMemSize):
                 return ucbo;
         return None;
+
+    '''
+    -----------------------------------------------------------
+           Desc: Try Server Container Resize One-On-Many
+    ---------------------------------------------------------
+    '''
+    def trySCROneToMany(self,scOverList,scUnderList):
+        ocRemaining=list();
+        print("#OneOnMany: Per server overloaded list",len(scOverList));    
+        isResized=False;
+        for ocbo in scOverList:
+            print("[OneOnMany: Overload Cname:%s]"%(ocbo.name));
+            isResized=False;
+            for ucbo in scUnderList:
+                if(ucbo.expectedMemSize>1 and ocbo.expectedMemSize>1):
+                    #resize;
+                    isResized=True;
+                    print(">OneOnmany: Resizing (%s,%s) which needs memory %sMB using container (%s,%s)"%(ocbo.sname,ocbo.name,ocbo.expectedMemSize//Constants.MBtoKB,ucbo.sname,ucbo.name))                                                        
+                    incMem= ( ucbo.expectedMemSize if ocbo.expectedMemSize >= ucbo.expectedMemSize else ocbo.expectedMemSize);
+                    uMaxMem=ucbo.getMemoryLimit();
+                    oMaxMem=ocbo.getMemoryLimit();
+                    uNewMem=uMaxMem-incMem;
+                    oNewMem=oMaxMem+incMem;
+                    remainingMem=ocbo.expectedMemSize-incMem;
+                    #print("incMem",incMem//Constants.MBtoKB);                                        
+                    #print("uMaxMem",uMaxMem//Constants.MBtoKB);
+                    #print("ucbo.expectedMemSize",ucbo.expectedMemSize//Constants.MBtoKB);
+                    #print("umem",uNewMem//Constants.MBtoKB);
+                    #print("oMaxMem",oMaxMem//Constants.MBtoKB);                    
+                    #print("ocbo.expectedMemSize",ocbo.expectedMemSize//Constants.MBtoKB);                    
+                    #print("oNewMem",oNewMem//Constants.MBtoKB);
+                    #print("delta:",remainingMem//Constants.MBtoKB);
+                    ucbo.expectedMemSize=0;
+                    ocbo.expectedMemSize=remainingMem;                    
+                    ucbo.setMemoryLimit(uNewMem);
+                    ocbo.setMemoryLimit(oNewMem);
+                    
+            if(not isResized):
+                #no container to resize. Going for nextphase.                
+                print("~[OneOnMany: No appropiate containers found for (%s,%s) which needs memory %sMB]"%(ocbo.sname,ocbo.name,ocbo.expectedMemSize//Constants.MBtoKB))                
+                ocRemaining.append(ocbo);            
+            elif(ocbo.expectedMemSize>0):
+                print("~[OneOnMany: Unable to Resize (%s,%s) which needs memory %sMB completely.]"%(ocbo.sname,ocbo.name,ocbo.expectedMemSize//Constants.MBtoKB));                                                        
+        return ocRemaining;
 
     '''
     ------------------------------------------------
@@ -94,6 +144,8 @@ class Monitor():
                 if(uPercent < Constants.MemThresholdPercent):
                     delta=Constants.MemThresholdPercent-Constants.UGPercent;
                     expectedMemSize=curMem-u//delta;
+                    print("CurMem:", curMem, "U:", u, "Delta:", delta, "U/Delta:", u//delta)
+                    expectedMemSize=(0 if expectedMemSize<=0 else expectedMemSize);
                     cbo.expectedMemSize=expectedMemSize;
                     scList.append(cbo);
                     print("Underload: Server "+cbo.sname+" "+cbo.name+"  cur: %d decreaseBy: %d"%(curMem,expectedMemSize//Constants.MBtoKB));
@@ -135,9 +187,9 @@ class Monitor():
                 if(oPercent >= Constants.MemThresholdPercent):
                     delta=Constants.MemThresholdPercent-Constants.OGPercent;
                     expectedMemSize=curUtil//delta - curMem;
-                    cbo.expectedMemSize= (expectedMemSize if expectedMemSize+curMem < maxMem else maxMem);
+                    cbo.expectedMemSize= (expectedMemSize if expectedMemSize+curMem < maxMem else maxMem-curMem);
                     scList.append(cbo);
-                    print("Overload: Server "+cbo.sname+" "+cbo.name+"  cur: %d increaseBy: %d"%(curMem,expectedMemSize//Constants.MBtoKB));
+                    print("Overload: Server "+cbo.sname+" "+cbo.name+"  cur: %d increaseBy: %d"%(curMem,cbo.expectedMemSize//Constants.MBtoKB));
             scList.sort(key=lambda obj: obj.expectedMemSize, reverse=False)
             overList.append(scList);
         return overList;
