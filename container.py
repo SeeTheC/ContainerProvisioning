@@ -60,7 +60,7 @@ class Server:
             hw["limits.memory"]=str(container_bo.memory)+"MB";
         config = {'name': container_bo.name,  "config": hw, 'source': {'type': 'image','fingerprint':str(Config.cp_config["defaultFingerprint"])}}
         container = self.servers[server_index].client.containers.create(config, wait=True);
-        container.start(wait=False)
+        container.start(wait=False);
         try:
             Server.SLA[self.servers[server_index].host][container_bo.name] = [container_bo.cpu, container_bo.memory * Constants.MBtoKB]
         except KeyError as e:
