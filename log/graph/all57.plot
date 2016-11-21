@@ -1,8 +1,7 @@
 set term png size 1000,800
 #set size 0.9,0.
 
-set output "cp1479681211168.png"
-#set output "cp1479681234073.png"
+set output "cp1479681272657.png"
 
 set yrange [0:1]
 set xrange [0:25]
@@ -12,4 +11,4 @@ set grid ytics
 Leg="Utilization"
 set boxwidth 0.2 absolute
 set style fill solid 1.0 noborder
-plot 'cp1479681211168' using 1:2 title Leg  with boxes 
+plot 'cp1479681272657' using 1:2 title Leg  with boxes 
